@@ -22,43 +22,6 @@ apply plugin: 'forge'
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
-task buildInfo {
-    def cmdTag = "git describe --abbrev=0 --exact-match --dirty"
-    def procTag = cmdTag.execute()
-    procTag.waitFor()
-    if (procTag.exitValue() == 0) {
-        ext.isRelease = true
-        ext.tag = "${procTag.text.trim().substring(1)}" // Full Release
-        ext.version = ext.tag
-    } else {
-        ext.isRelease = false
-        def cmdLat = "git describe --dirty"
-        def procLat = cmdLat.execute()
-        procLat.waitFor()
-        if (procLat.exitValue() == 0) {
-            ext.tag = procLat.text.trim().substring(1)
-        } else {
-            def cmdDes = "git describe --dirty"
-            def procDes = cmdDes.execute()
-            procDes.waitFor()
-            if (procDes.exitValue() == 0) {
-                ext.tag = "DEV-${procDes.text.trim()}"
-            } else {
-                ext.tag = "NOGIT" // No tags at all?!
-            }
-        }
-        if (System.getenv().VERSION_FALLBACK != null) {
-            ext.version = System.getenv().VERSION_FALLBACK
-        } else {
-            ext.version = ext.tag
-        }
-    }
-}
-
-if (System.getenv().ARTIFACT_VERSION == null) {
-    version = "${project.buildInfo.version}"
-} else {
-}
 version = "${project.group_id}-RSL"
 
 group = project.group_id
