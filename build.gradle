@@ -22,7 +22,7 @@ apply plugin: 'forge'
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
-version = "${project.group_id}-RSL"
+version = "${project.mod_version}-RSL"
 
 group = project.group_id
 archivesBaseName = "${project.mod_id}-${project.minecraft_version}"
