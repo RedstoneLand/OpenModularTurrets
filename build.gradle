@@ -58,14 +58,14 @@ task buildInfo {
 if (System.getenv().ARTIFACT_VERSION == null) {
     version = "${project.buildInfo.version}"
 } else {
-    version = "${System.getenv().ARTIFACT_VERSION}"
 }
+version = "${project.group_id}-RSL"
 
 group = project.group_id
 archivesBaseName = "${project.mod_id}-${project.minecraft_version}"
 
 minecraft {
-    version = "${project.forge_version}-RSL"
+    version = "${project.forge_version}"
     runDir = "eclipse"
 
     replace "@VERSION@", project.version
