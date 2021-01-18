@@ -166,7 +166,7 @@ bintray {
     publish = true
     pkg {
             repo = 'minecraft'
-            name = 'test'
+            name = project.mod_id
             licenses = ['GPL-3.0']
             vcsUrl = 'https://github.com/RedstoneLand/OpenModularTurrets'
             version {
