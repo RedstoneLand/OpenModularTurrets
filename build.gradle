@@ -1,0 +1,178 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        maven {
+            name = "forge"
+            url = "http://files.minecraftforge.net/maven"
+        }
+        maven {
+            name = "sonatype"
+            url = "https://oss.sonatype.org/content/repositories/snapshots/"
+        }
+    }
+    dependencies {
+        classpath 'net.minecraftforge.gradle:ForgeGradle:1.2-SNAPSHOT'
+    }
+}
+plugins {
+  id "com.jfrog.bintray" version "1.7"
+}
+apply plugin: 'forge'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+task buildInfo {
+    def cmdTag = "git describe --abbrev=0 --exact-match --dirty"
+    def procTag = cmdTag.execute()
+    procTag.waitFor()
+    if (procTag.exitValue() == 0) {
+        ext.isRelease = true
+        ext.tag = "${procTag.text.trim().substring(1)}" // Full Release
+        ext.version = ext.tag
+    } else {
+        ext.isRelease = false
+        def cmdLat = "git describe --dirty"
+        def procLat = cmdLat.execute()
+        procLat.waitFor()
+        if (procLat.exitValue() == 0) {
+            ext.tag = procLat.text.trim().substring(1)
+        } else {
+            def cmdDes = "git describe --dirty"
+            def procDes = cmdDes.execute()
+            procDes.waitFor()
+            if (procDes.exitValue() == 0) {
+                ext.tag = "DEV-${procDes.text.trim()}"
+            } else {
+                ext.tag = "NOGIT" // No tags at all?!
+            }
+        }
+        if (System.getenv().VERSION_FALLBACK != null) {
+            ext.version = System.getenv().VERSION_FALLBACK
+        } else {
+            ext.version = ext.tag
+        }
+    }
+}
+
+if (System.getenv().ARTIFACT_VERSION == null) {
+    version = "${project.buildInfo.version}"
+} else {
+    version = "${System.getenv().ARTIFACT_VERSION}"
+}
+
+group = project.group_id
+archivesBaseName = "${project.mod_id}-${project.minecraft_version}"
+
+minecraft {
+    version = "${project.forge_version}"
+    runDir = "eclipse"
+
+    replace "@VERSION@", project.version
+}
+
+processResources {
+    // this will ensure that this task is redone when the versions change.
+    inputs.property "version", project.version
+    inputs.property "mcversion", project.minecraft.version
+
+    // replace stuff in mcmod.info, nothing else
+    from(sourceSets.main.resources.srcDirs) {
+        include 'mcmod.info'
+
+        // replace version and mcversion
+        expand 'version': project.version, 'mcversion': project.minecraft.version
+    }
+
+    // copy everything else, thats not the mcmod.info
+    from(sourceSets.main.resources.srcDirs) {
+        exclude 'mcmod.info'
+    }
+}
+
+repositories {
+    maven {
+        name = "IGW"
+        url = "http://maven.k-4u.nl/"
+    }
+    maven { // The repo from which to get waila
+        name "Mobius Repo"
+        url "http://mobiusstrip.eu/maven"
+    }
+    maven { // the repo from which to get NEI and stuff
+        name 'CB Repo'
+        url "http://chickenbones.net/maven/"
+    }
+    maven { // the repo from which to get EnderIO and tterags mods
+        name 'tterrag'
+        url "http://maven.tterrag.com/"
+    }
+    maven {
+        name = "OC repo"
+        url = "http://maven.cil.li/"
+    }
+    maven {
+        name = "ic2"
+        url = "http://maven.ic2.player.to/"
+    }
+}
+
+dependencies {
+    // I dont have to specify NEI.. because gradle magic. aka: transitive dependency resolution
+    compile "igwmod:IGW-Mod-${project.minecraft_version}:${project.igwmod_version}:userdev"
+    compile "mcp.mobius.waila:Waila:${project.waila_version}"
+    compile "codechicken:CodeChickenLib:${project.minecraft_version}-${project.ccl_version}:dev"
+    compile "codechicken:CodeChickenCore:${project.minecraft_version}-${project.ccc_version}:dev"
+    compile "li.cil.oc:OpenComputers:MC${project.minecraft_version}-${project.oc_version}:dev"
+    //compile "Azanor:Thaumcraft:${project.tc_version}:deobf@jar"
+    compile "net.industrial-craft:industrialcraft-2:${project.ic2_version}:dev"
+    //runtime "com.github.azanor:baubles:${project.baubles_version}"
+}
+
+task sourceJar(type: Jar) {
+    from sourceSets.main.allSource
+    classifier = 'sources'
+}
+
+task deobfJar(type: Jar) {
+    from sourceSets.main.output
+    classifier = 'dev'
+}
+
+build.dependsOn sourceJar, deobfJar
+
+idea {
+    module {
+        outputDir = file('build/classes/main')
+    }
+}
+
+apply plugin: 'maven-publish'
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifact jar
+            artifact deobfJar
+            artifact sourceJar
+        }
+    }
+}
+
+bintray {
+    user = System.env.MAVEN_USERNAME
+    key = System.env.MAVEN_PASSWORD
+    publications = ['mavenJava']
+    publish = true
+    pkg {
+            repo = 'minecraft'
+            name = 'test'
+            licenses = ['GPL-3.0']
+            vcsUrl = 'https://github.com/RedstoneLand/OpenModularTurrets'
+            version {
+                name = project.version
+                desc = project.description
+                released  = new Date()
+            }
+        }
+}
