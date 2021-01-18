@@ -65,7 +65,7 @@ group = project.group_id
 archivesBaseName = "${project.mod_id}-${project.minecraft_version}"
 
 minecraft {
-    version = "${project.forge_version}"
+    version = "${project.forge_version}-RSL"
     runDir = "eclipse"
 
     replace "@VERSION@", project.version
